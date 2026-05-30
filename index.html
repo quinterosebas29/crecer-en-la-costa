@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santa Marta - Vaporwave TV</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #030005; color: #fff;
+            overflow: hidden;
+        }
+
+        body.is-off #vaporwave-bg { filter: brightness(0.7) saturate(0.7); }
+        body.is-off #global-vignette { opacity: 1; }
+        body.is-on #vaporwave-bg { filter: brightness(1) saturate(1); }
+        body.is-on #global-vignette { opacity: 1; }
+
+        #vaporwave-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            object-fit: cover; z-index: 0; transition: filter 4s ease-in-out;
+        }
+
+        #global-vignette {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.85) 100%);
+            z-index: 1; pointer-events: none; transition: opacity 3s ease;
+        }
+
+        #app-container {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 100%; position: relative; z-index: 5;
+        }
+
+        .tv-wrapper {
+            position: relative; width: 90vw; max-width: 900px;
+            aspect-ratio: 4/3; display: flex; flex-direction: column;
+            transition: filter 2s ease; z-index: 5;
+        }
+        body.is-on .tv-wrapper { filter: drop-shadow(0 40px 60px rgba(0, 0, 0, 0.8)); }
+
+        .tv-off-filter {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: inherit;
+            backdrop-filter: brightness(0.6) grayscale(0.2);
+            -webkit-backdrop-filter: brightness(0.6) grayscale(0.2);
+            z-index: 50; pointer-events: none;
+            opacity: 0; transition: opacity 2s ease;
+        }
+        body.is-off .tv-off-filter { opacity: 1; }
+
+        .tv-wrapper::before {
+            content: ""; position: absolute;
+            top: -30%; left: -30%; right: -30%; bottom: -30%;
+            background: radial-gradient(circle at center, rgba(1, 205, 254, 0.15) 0%, rgba(255, 113, 206, 0.1) 40%, transparent 70%);
+            z-index: -1; opacity: 0; transition: opacity 3s ease; pointer-events: none;
+        }
+        body.is-on .tv-wrapper::before { opacity: 1; }
+
+        .css-tv-casing {
+            background: linear-gradient(135deg, #2a2a30 0%, #0d0d12 100%);
+            border: 2px solid #555; border-bottom: 6px solid #000; border-right: 6px solid #000;
+            border-radius: 40px; padding: 25px 25px 80px 25px;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.9), inset 5px 5px 15px rgba(255, 255, 255, 0.15), inset -5px -5px 15px rgba(0, 0, 0, 0.8);
+            transition: all 1.5s ease;
+            display: flex; flex-direction: column;
+        }
+        body.is-on .css-tv-casing {
+            box-shadow: 0 50px 100px rgba(0,0,0,0.95), -40px -40px 100px rgba(255, 113, 206, 0.6), 40px 40px 100px rgba(1, 205, 254, 0.6), inset 10px 10px 50px rgba(255, 113, 206, 0.4), inset -10px -10px 50px rgba(1, 205, 254, 0.4), inset 8px 8px 15px rgba(255, 255, 255, 0.3), inset -8px -8px 15px rgba(0, 0, 0, 0.9);
+            border-top-color: rgba(255, 113, 206, 0.7); border-left-color: rgba(255, 113, 206, 0.7); border-bottom-color: rgba(1, 205, 254, 0.6); border-right-color: rgba(1, 205, 254, 0.6);  
+        }
+
+        .css-tv-bezel {
+            flex: 1 1 auto; height: 0; background: #0f0f11; 
+            border-radius: 30px; padding: 30px;
+            box-shadow: inset 0 0 50px #000, inset 0 10px 20px rgba(0,0,0,0.8), 0 2px 3px rgba(255,255,255,0.4);
+            position: relative; display: flex; transition: all 1.5s ease;
+        }
+        body.is-on .css-tv-bezel {
+            box-shadow: inset 0 0 60px #000, inset 0 10px 20px rgba(0,0,0,0.8), 0 2px 10px rgba(1, 205, 254, 0.5), 0 -2px 10px rgba(255, 113, 206, 0.3);
+        }
+
+        #tv-screen {
+            position: relative; width: 100%; height: 100%;
+            background: #050505; border-radius: 25px; overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0,0,0,1);
+        }
+        #tv-screen::after {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0) 100%);
+            border-radius: 25px; pointer-events: none; z-index: 50; box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+        }
+
+        .css-tv-controls {
+            margin-top: 15px; min-height: 55px; padding: 10px 15px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+            background: linear-gradient(to right, #111, #1a1a20, #111);
+            border-radius: 8px; border: 1px solid #333;
+            box-shadow: inset 0 4px 8px rgba(255,255,255,0.1), inset 0 -4px 8px rgba(0,0,0,0.8), 0 4px 8px rgba(0,0,0,0.8);
+            transition: all 1.5s ease;
+        }
+        body.is-on .css-tv-controls { border-top-color: rgba(255,113,206,0.3); border-bottom-color: rgba(1,205,254,0.3); }
+
+        .tv-brand {
+            font-family: 'Times New Roman', serif; opacity: 0; pointer-events: none;
+            transition: opacity 1.5s ease; flex: 1 1 100%; text-align: center; margin-bottom: 10px;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        @media (min-width: 768px) { .tv-brand { flex: 1; text-align: left; margin-bottom: 0; display: flex; flex-direction: column; } }
+
+        body.is-on .tv-brand { opacity: 1; }
+
+        .brand-title {
+            font-size: 1.6rem; font-weight: 900; font-style: italic;
+            color: rgba(255, 113, 206, 0.9); 
+            text-shadow: 0 0 10px rgba(255, 113, 206, 0.6), 1px 1px 0 #000;
+            letter-spacing: 2px; line-height: 1.1;
+        }
+
+        .brand-subtitle {
+            font-family: 'Arial', sans-serif; font-size: 0.9rem; font-weight: 500;
+            color: rgba(1, 205, 254, 0.8); text-shadow: 0 0 5px rgba(1, 205, 254, 0.5), 1px 1px 0 #000;
+            letter-spacing: 1px; margin-top: 2px;
+        }
+
+        .tv-buttons-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+        .tv-btn {
+            background: linear-gradient(to bottom, #3a3a40, #111);
+            border: 1px solid #555; border-bottom: 2px solid #000; border-right: 2px solid #000;
+            color: #aaa; font-family: 'Arial', sans-serif; font-weight: 800; font-size: 12px;
+            padding: 8px 14px; border-radius: 5px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.7);
+            transition: all 0.2s ease; display:flex; align-items:center; justify-content:center;
+        }
+        .tv-btn:active {
+            transform: translateY(2px); border-bottom: 1px solid #222; border-right: 1px solid #222;
+            background: linear-gradient(to bottom, #111, #222); box-shadow: 0 2px 3px rgba(0,0,0,0.5); color: #fff;
+        }
+
+        .btn-power { transition: all 0.2s ease; position: relative; z-index: 100; }
+        body.is-off .btn-power {
+            background: #ff71ce; color: #000; border-color: #ff71ce;
+            animation: onGlowOffState 1s infinite alternate;
+        }
+        @keyframes onGlowOffState {
+            0% { box-shadow: 0 0 10px #ff71ce, inset 0 0 5px #fff; transform: scale(1); }
+            100% { box-shadow: 0 0 30px #ff71ce, 0 0 15px #ff71ce, inset 0 0 8px #fff; transform: scale(1.05); }
+        }
+        body.is-on .btn-power {
+            background: linear-gradient(to bottom, #3a3a40, #111);
+            color: #ff71ce; text-shadow: 0 0 5px rgba(255, 113, 206, 0.6);
+            border: 1px solid #555; border-bottom: 2px solid #000; border-right: 2px solid #000;
+        }
+
+        .btn-pause-glow { animation: pauseGlow 1.5s infinite alternate; }
+        @keyframes pauseGlow {
+            0% { box-shadow: 0 0 5px #1cd0ff, inset 0 0 5px #1cd0ff; border-color: #1cd0ff; color: #fff; }
+            100% { box-shadow: 0 0 15px #1cd0ff, inset 0 0 10px #1cd0ff; border-color: #fff; color: #1cd0ff; }
+        }
+
+        #tv-video { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.15) brightness(1.1) saturate(1.4) sepia(0.4) hue-rotate(-10deg); transition: opacity 0.3s; }
+        body.is-off #tv-video { opacity: 0; }
+
+        .vid-vhs-effect {
+            position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 2; opacity: 0;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px);
+        }
+        body.is-on .vid-vhs-effect { opacity: 1; }
+
+        .vid-vhs-glitch {
+            position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background: rgba(255,255,255,0.15); z-index: 2; pointer-events: none; opacity: 0;
+            animation: vhsGlitch 6s infinite linear; box-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+        body.is-on .vid-vhs-glitch { opacity: 1; }
+        @keyframes vhsGlitch { 0% { top: -10%; } 10% { top: 110%; } 100% { top: 110%; } }
+
+        .crt-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); opacity: 0;
+        }
+        body.is-on .crt-overlay { opacity: 1; }
+        .crt-overlay::after {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: rgba(18, 16, 16, 0.1); opacity: 0; z-index: 3; pointer-events: none; animation: flicker 0.15s infinite;
+        }
+        body.is-on .crt-overlay::after { opacity: 0.1; }
+        @keyframes flicker { 0% { opacity: 0.05; } 50% { opacity: 0.1; } 100% { opacity: 0.05; } }
+
+        #volume-osd {
+            position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 15px; z-index: 10; opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
+        }
+        #volume-osd.osd-visible { opacity: 1; }
+        .osd-text { color: #0f0; font-family: 'Courier New', monospace; font-weight: bold; font-size: 24px; text-shadow: 2px 2px 0 #000; }
+        .osd-bar-container { width: 200px; height: 20px; border: 2px solid #0f0; background: rgba(0,255,0,0.2); box-shadow: 2px 2px 0 #000; padding: 2px; }
+        #osd-bar-fill { height: 100%; background: #0f0; width: 50%; transition: width 0.1s; }
+
+        /* GALERIA - ESTILO VAPORWAVE */
+        .gallery-menu {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 0, 15, 0.9); z-index: 20; display: none;
+            flex-wrap: wrap; justify-content: center; align-content: flex-start;
+            gap: 25px; padding: 40px; overflow-y: auto; overflow-x: hidden; font-family: 'Times New Roman', serif;
+        }
+        .gallery-menu.is-open { display: flex; }
+        .gallery-menu::-webkit-scrollbar { width: 8px; }
+        .gallery-menu::-webkit-scrollbar-thumb { background: #ff71ce; }
+
+        /* ESTILO VAPORWAVE VENTANA */
+        .gallery-item {
+            position: relative; width: calc(33.333% - 20px); min-width: 180px; aspect-ratio: 4/3; cursor: pointer;
+            background: rgba(20, 0, 30, 0.8); border: 2px solid rgba(1, 205, 254, 0.4); border-radius: 8px;
+            box-shadow: 0 0 10px rgba(1, 205, 254, 0.2);
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.3s, box-shadow 0.3s;
+            display: flex; flex-direction: column; overflow: hidden;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .gallery-item:hover { 
+            transform: scale(1.5); z-index: 30; 
+            border-color: rgba(255, 113, 206, 0.8);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.9), 0 0 15px rgba(255, 113, 206, 0.6);
+            opacity: 1;
+        }
+        
+        .window-title {
+            background: linear-gradient(90deg, rgba(20,0,30,1) 0%, rgba(50,0,50,1) 100%); color: #ff71ce; padding: 5px 10px; font-size: 13px; font-weight: bold; font-style: italic; text-shadow: 0 0 5px rgba(255, 113, 206, 0.6);
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 113, 206, 0.4); user-select: none;
+        }
+        
+        .window-controls { display: flex; gap: 5px; }
+        .win-btn {
+            width: 10px; height: 10px; border-radius: 50%;
+            color: transparent; display: flex; justify-content: center; align-items: center; font-size: 0; line-height: 1;
+        }
+        .win-btn:nth-child(1) { background: #1cd0ff; box-shadow: 0 0 5px rgba(1, 205, 254, 0.6); }
+        .win-btn:nth-child(2) { background: #ffff00; box-shadow: 0 0 5px rgba(255, 255, 0, 0.6); }
+        .win-btn:nth-child(3) { background: #ff71ce; box-shadow: 0 0 5px rgba(255, 113, 206, 0.6); }
+        
+        .video-container {
+            flex: 1; background: #000; border-radius: 4px;
+            margin: 6px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+
+        .gallery-item video {
+            width: 100%; height: 100%; object-fit: cover; pointer-events: none; opacity: 0.6; transition: opacity 0.3s;
+            filter: contrast(1.15) brightness(1.1) saturate(1.4) sepia(0.4) hue-rotate(-10deg);
+        }
+        
+        /* HOVER: MODO VENTANA REPRODUCIR */
+        .gallery-item:hover video { opacity: 1; }
+
+        .gallery-label {
+            position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            color: #1cd0ff; padding: 6px 3px 3px 3px; font-size: 13px; text-align: center; pointer-events: none; text-shadow: 1px 1px 2px #000, 0 0 5px rgba(1, 205, 254, 0.6);
+        }
+    </style>
+</head>
+<body class="is-off">
+    <!-- FONDO VAPORWAVE Y VIGNETTE -->
+    <div id="global-vignette"></div>
+    <img id="vaporwave-bg" src="FONDO%20vaporwave.gif" alt="Fondo Vaporwave" />
+    <audio id="bg-audio" src="Musica%20de%20fondo%20Nintendo%20DSi%20Music.mp3" loop preload="auto"></audio>
+
+    <div id="app-container">
+        <div class="tv-wrapper css-tv-casing">
+            <div class="tv-off-filter"></div>
+            
+            <!-- VIDEO SCREEN -->
+            <div class="css-tv-bezel">
+                <div id="tv-screen">
+                    <!-- Video -->
+                    <video id="tv-video" playsinline></video>
+                    
+                    <!-- VHS filter elements -->
+                    <div class="vid-vhs-effect"></div>
+                    <div class="vid-vhs-glitch"></div>
+                    <div class="crt-overlay"></div>
+                    
+                    <!-- GALLERIA OVERLAY -->
+                    <div id="gallery-menu" class="gallery-menu"></div>
+
+                    <!-- OSD -->
+                    <div id="volume-osd">
+                        <div class="osd-text">VOL</div>
+                        <div class="osd-bar-container">
+                            <div id="osd-bar-fill" style="width: 10%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TV CONTROLS -->
+            <div class="css-tv-controls">
+                <div class="tv-brand">
+                    <span class="brand-title">Santa Marta</span>
+                    <span class="brand-subtitle">La ciudad que llamo hogar</span>
+                </div>
+                <div class="tv-buttons-group">
+                    <button id="btn-power" class="tv-btn btn-power" title="Power / Encender">ON</button>
+                    <button id="btn-pause" class="tv-btn" title="Pausa">PAUSE</button>
+                    <button id="btn-voldown" class="tv-btn" title="Menos Volumen">VOL -</button>
+                    <button id="btn-volup" class="tv-btn" title="Mas Volumen">VOL +</button>
+                    <button id="btn-prev" class="tv-btn" title="Canal Anterior">CH &#9660;</button>
+                    <button id="btn-next" class="tv-btn" title="Canal Siguiente">CH &#9650;</button>
+                    <button id="btn-menu" class="tv-btn" title="Ver todos los videos">MENU</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileNamesList = [
+            'Video 1.mp4', 'Video 2 (Sin audio).mp4', 'Video 3.mp4', 'Video 4.mp4',
+            'Video 5 (sin audio).mp4', 'Video 6.mp4', 'Video 7.mp4', 'Video 8.mp4',
+            'Video 10 (sin audio).mp4', 'Video 12 (sin audio).mp4',
+            'Video 13.mp4', 'Video 14.mp4'
+        ];
+
+        let isOn = false;
+        let isPaused = false;
+        let isGalleryOpen = false;
+        let indexActual = 0;
+        let volumenVideo = 0.1;
+        let isTransitioning = false;
+
+        const MAX_SEGUNDOS_VIDEO = 10;
+        const TIEMPO_ESTATICA_MS = 600;
+
+        const videoRef = document.getElementById('tv-video');
+        const bgAudioRef = document.getElementById('bg-audio');
+        const galleryMenu = document.getElementById('gallery-menu');
+        const volumeOsd = document.getElementById('volume-osd');
+        const volumeFill = document.getElementById('osd-bar-fill');
+        const btnPause = document.getElementById('btn-pause');
+
+        let fadeAudioInterval = null;
+        let timeoutEstatica = null;
+        let osdTimeout = null;
+
+        // Init gallery
+        fileNamesList.forEach((file, i) => {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            
+            // Title bar de Window
+            const titleBar = document.createElement('div');
+            titleBar.className = 'window-title';
+            titleBar.innerHTML = `
+                <span>Memoria_${i+1}.exe</span>
+                <div class="window-controls">
+                    <div class="win-btn">_</div>
+                    <div class="win-btn">&#9723;</div>
+                    <div class="win-btn">X</div>
+                </div>
+            `;
+            
+            const vidContainer = document.createElement('div');
+            vidContainer.className = 'video-container';
+            
+            const vid = document.createElement('video');
+            vid.src = encodeURI(file);
+            vid.muted = true;
+            vid.loop = true;
+            vid.playsInline = true;
+            vid.preload = 'metadata';
+            
+            const label = document.createElement('div');
+            label.className = 'gallery-label';
+            label.innerText = 'Recuerdo ' + (i + 1);
+
+            vidContainer.appendChild(vid);
+            vidContainer.appendChild(label);
+            
+            item.appendChild(titleBar);
+            item.appendChild(vidContainer);
+
+            // Efecto Hover Modo Ventana
+            item.addEventListener('mouseenter', () => { 
+                vid.play().catch(() => {}); 
+            });
+            item.addEventListener('mouseleave', () => { 
+                vid.pause(); vid.currentTime = 0; 
+            });
+            item.addEventListener('click', () => { selectFromGallery(i); });
+            
+            galleryMenu.appendChild(item);
+        });
+
+        function updateVolumeDisplay() {
+            volumeFill.style.width = Math.round(volumenVideo * 100) + '%';
+        }
+
+        function setHTMLVolume() {
+            if (!isTransitioning) {
+                const currentName = decodeURIComponent(fileNamesList[indexActual]).toLowerCase();
+                if (!currentName.includes('sin audio')) {
+                    videoRef.volume = volumenVideo;
+                }
+            }
+        }
+
+        function showOsd() {
+            volumeOsd.classList.add('osd-visible');
+            if (osdTimeout) clearTimeout(osdTimeout);
+            osdTimeout = setTimeout(() => {
+                volumeOsd.classList.remove('osd-visible');
+            }, 2000);
+        }
+
+        function playStaticToVideo(targetIndex) {
+            if (!isOn) return;
+            isTransitioning = true;
+            if (timeoutEstatica) clearTimeout(timeoutEstatica);
+            
+            videoRef.src = 'Efecto%20de%20estatica%20.mp4';
+            videoRef.muted = false;
+            videoRef.volume = Math.min(1.0, volumenVideo + 0.2);
+            videoRef.play().catch(() => {});
+
+            timeoutEstatica = setTimeout(() => {
+                if (!isOn) return;
+                isTransitioning = false;
+                
+                const archivoTarget = encodeURI(fileNamesList[targetIndex]);
+                videoRef.src = archivoTarget;
+                
+                const debeEstarMuteado = fileNamesList[targetIndex].toLowerCase().includes('sin audio');
+                videoRef.muted = debeEstarMuteado;
+                if (!debeEstarMuteado) {
+                    videoRef.volume = volumenVideo;
+                }
+                
+                videoRef.currentTime = 0;
+                if (!isGalleryOpen && !isPaused) {
+                    videoRef.play().catch(err => console.warn("Autoplay bloqueado.", err));
+                }
+            }, TIEMPO_ESTATICA_MS);
+        }
+
+        function canalSiguiente() {
+            if (!isOn) return;
+            indexActual = (indexActual + 1) % fileNamesList.length;
+            playStaticToVideo(indexActual);
+        }
+
+        function canalAnterior() {
+            if (!isOn) return;
+            indexActual = (indexActual - 1 + fileNamesList.length) % fileNamesList.length;
+            playStaticToVideo(indexActual);
+        }
+
+        videoRef.addEventListener('timeupdate', () => {
+            if (isTransitioning || isPaused || isGalleryOpen) return;
+            if (videoRef.currentTime >= MAX_SEGUNDOS_VIDEO) {
+                canalSiguiente();
+            }
+        });
+
+        videoRef.addEventListener('ended', () => {
+            if (isTransitioning || isPaused || isGalleryOpen) return;
+            canalSiguiente();
+        });
+
+        function sonidoEncendidoCRT() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(40, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(10, ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            } catch(e) {}
+        }
+
+        function transicionMusicaBackground(deberiaEncender) {
+            if (fadeAudioInterval) clearInterval(fadeAudioInterval);
+            const VOLUMEN_MAX_MUSICA = 0.6; 
+            const paso = 0.05;
+
+            if (deberiaEncender) {
+                bgAudioRef.volume = 0;
+                bgAudioRef.play().catch(()=>{});
+                fadeAudioInterval = setInterval(() => {
+                    if (bgAudioRef.volume + paso >= VOLUMEN_MAX_MUSICA) {
+                        bgAudioRef.volume = VOLUMEN_MAX_MUSICA;
+                        clearInterval(fadeAudioInterval);
+                    } else {
+                        bgAudioRef.volume += paso;
+                    }
+                }, 200);
+            } else {
+                fadeAudioInterval = setInterval(() => {
+                    if (bgAudioRef.volume - paso <= 0) {
+                        bgAudioRef.volume = 0;
+                        bgAudioRef.pause();
+                        clearInterval(fadeAudioInterval);
+                    } else {
+                        bgAudioRef.volume -= paso;
+                    }
+                }, 100);
+            }
+        }
+
+        function ajustarVolumenMusicaMenu(enMenu) {
+            if (fadeAudioInterval) clearInterval(fadeAudioInterval);
+            const targetVol = enMenu ? 0.15 : 0.6;
+            const paso = 0.05;
+            
+            fadeAudioInterval = setInterval(() => {
+                if (enMenu) {
+                    if (bgAudioRef.volume - paso <= targetVol) {
+                        bgAudioRef.volume = targetVol;
+                        clearInterval(fadeAudioInterval);
+                    } else {
+                        bgAudioRef.volume -= paso;
+                    }
+                } else {
+                    if (bgAudioRef.volume + paso >= targetVol) {
+                        bgAudioRef.volume = targetVol;
+                        clearInterval(fadeAudioInterval);
+                    } else {
+                        bgAudioRef.volume += paso;
+                    }
+                }
+            }, 100);
+        }
+
+        function selectFromGallery(index) {
+            indexActual = index;
+            isGalleryOpen = false;
+            galleryMenu.classList.remove('is-open');
+            ajustarVolumenMusicaMenu(false);
+            if (isPaused) {
+                isPaused = false;
+                btnPause.classList.remove('btn-pause-glow');
+            }
+            playStaticToVideo(index);
+        }
+
+        document.getElementById('btn-power').addEventListener('click', () => {
+            isOn = !isOn;
+            if (isOn) {
+                document.body.classList.remove('is-off');
+                document.body.classList.add('is-on');
+                sonidoEncendidoCRT();
+                isPaused = false;
+                btnPause.classList.remove('btn-pause-glow');
+                transicionMusicaBackground(true);
+                setTimeout(() => { playStaticToVideo(indexActual); }, 1000);
+            } else {
+                document.body.classList.remove('is-on');
+                document.body.classList.add('is-off');
+                transicionMusicaBackground(false);
+                videoRef.pause();
+                if (timeoutEstatica) clearTimeout(timeoutEstatica);
+                isTransitioning = false;
+                isGalleryOpen = false;
+                galleryMenu.classList.remove('is-open');
+            }
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            if (!isOn || isTransitioning) return;
+            if (isPaused) {
+                videoRef.play();
+                isPaused = false;
+                btnPause.classList.remove('btn-pause-glow');
+            } else {
+                videoRef.pause();
+                isPaused = true;
+                btnPause.classList.add('btn-pause-glow');
+            }
+        });
+
+        document.getElementById('btn-voldown').addEventListener('click', () => {
+            if (!isOn) return;
+            volumenVideo = Math.max(0.0, volumenVideo - 0.1);
+            setHTMLVolume(); updateVolumeDisplay(); showOsd();
+        });
+
+        document.getElementById('btn-volup').addEventListener('click', () => {
+            if (!isOn) return;
+            volumenVideo = Math.min(1.0, volumenVideo + 0.1);
+            setHTMLVolume(); updateVolumeDisplay(); showOsd();
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', canalAnterior);
+        document.getElementById('btn-next').addEventListener('click', canalSiguiente);
+        
+        document.getElementById('btn-menu').addEventListener('click', () => {
+            if (!isOn) return;
+            if (!isGalleryOpen) {
+                videoRef.pause();
+                isGalleryOpen = true;
+                galleryMenu.classList.add('is-open');
+                ajustarVolumenMusicaMenu(true);
+            } else {
+                isGalleryOpen = false;
+                galleryMenu.classList.remove('is-open');
+                ajustarVolumenMusicaMenu(false);
+                if (!isPaused && !isTransitioning) {
+                    videoRef.play().catch(() => {});
+                }
+            }
+        });
+    </script>
+</body>
+</html>
