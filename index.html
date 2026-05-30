@@ -259,16 +259,16 @@
 
         @media (max-width: 900px) {
             .tv-wrapper {
-                width: 96vw;
-                max-width: 96vw;
-                aspect-ratio: 4 / 3;
+                width: 100vw;
+                max-width: 100%;
+                aspect-ratio: auto;
             }
             .css-tv-casing {
-                padding: 18px 16px 70px;
-                border-radius: 28px;
+                padding: 16px 14px 58px;
+                border-radius: 30px;
             }
             .css-tv-bezel {
-                padding: 22px;
+                padding: 20px;
                 border-radius: 22px;
             }
             .css-tv-controls {
@@ -279,7 +279,7 @@
             }
             .tv-brand {
                 text-align: center;
-                margin-bottom: 12px;
+                margin-bottom: 10px;
             }
             .tv-buttons-group {
                 justify-content: center;
@@ -304,38 +304,49 @@
 
         @media (max-width: 600px) {
             .tv-wrapper {
-                aspect-ratio: 1;
-                min-height: 420px;
+                width: 100vw;
+                max-width: 100%;
+                aspect-ratio: auto;
             }
             .css-tv-casing {
-                padding: 16px 12px 60px;
+                padding: 12px 10px 10px;
+                border-radius: 24px;
             }
             .css-tv-bezel {
                 padding: 16px;
+                min-height: 50vw;
+            }
+            #tv-screen {
+                min-height: 42vw;
+            }
+            .css-tv-controls {
+                width: 100%;
+                padding: 10px 8px 10px;
+                gap: 8px;
             }
             .tv-brand {
-                margin-bottom: 8px;
-            }
-            .brand-title {
-                font-size: 1.4rem;
-            }
-            .brand-subtitle {
-                font-size: 0.8rem;
+                display: none;
             }
             .tv-buttons-group {
-                width: 100%;
+                flex-wrap: wrap;
+                justify-content: center;
                 gap: 8px;
             }
             .tv-btn {
-                flex: 1 1 48%;
+                flex: 1 1 calc(50% - 8px);
                 min-width: 0;
+                font-size: 11px;
+                padding: 10px 8px;
+            }
+            .tv-btn:nth-child(odd) {
+                margin-right: 0;
             }
             .gallery-menu {
-                padding: 18px 14px;
-                gap: 16px;
+                padding: 16px 12px;
+                gap: 14px;
             }
             .gallery-item {
-                width: calc(100% - 20px);
+                width: calc(100% - 16px);
                 min-width: auto;
             }
             .window-title {
