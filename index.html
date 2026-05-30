@@ -256,6 +256,97 @@
             position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
             color: #1cd0ff; padding: 6px 3px 3px 3px; font-size: 13px; text-align: center; pointer-events: none; text-shadow: 1px 1px 2px #000, 0 0 5px rgba(1, 205, 254, 0.6);
         }
+
+        @media (max-width: 900px) {
+            .tv-wrapper {
+                width: 96vw;
+                max-width: 96vw;
+                aspect-ratio: 4 / 3;
+            }
+            .css-tv-casing {
+                padding: 18px 16px 70px;
+                border-radius: 28px;
+            }
+            .css-tv-bezel {
+                padding: 22px;
+                border-radius: 22px;
+            }
+            .css-tv-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 12px 12px 10px;
+            }
+            .tv-brand {
+                text-align: center;
+                margin-bottom: 12px;
+            }
+            .tv-buttons-group {
+                justify-content: center;
+                gap: 10px;
+            }
+            .tv-btn {
+                min-width: 110px;
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+            #volume-osd {
+                bottom: 10%;
+                gap: 10px;
+            }
+            .osd-text {
+                font-size: 18px;
+            }
+            .osd-bar-container {
+                width: 160px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .tv-wrapper {
+                aspect-ratio: 1;
+                min-height: 420px;
+            }
+            .css-tv-casing {
+                padding: 16px 12px 60px;
+            }
+            .css-tv-bezel {
+                padding: 16px;
+            }
+            .tv-brand {
+                margin-bottom: 8px;
+            }
+            .brand-title {
+                font-size: 1.4rem;
+            }
+            .brand-subtitle {
+                font-size: 0.8rem;
+            }
+            .tv-buttons-group {
+                width: 100%;
+                gap: 8px;
+            }
+            .tv-btn {
+                flex: 1 1 48%;
+                min-width: 0;
+            }
+            .gallery-menu {
+                padding: 18px 14px;
+                gap: 16px;
+            }
+            .gallery-item {
+                width: calc(100% - 20px);
+                min-width: auto;
+            }
+            .window-title {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+            .gallery-label {
+                font-size: 12px;
+                padding: 5px 2px 4px 2px;
+            }
+        }
     </style>
 </head>
 <body class="is-off">
